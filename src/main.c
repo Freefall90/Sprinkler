@@ -1,11 +1,4 @@
-/* WiFi softAP Example
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -42,7 +35,6 @@ static const char *TAG = "SPRNK_MQTT";
 #define ZONE7 18
 #define ZONE8 19
 #define ZONE9 21
-//static int zonearray[7] = {ZONE1, ZONE2, ZONE4, ZONE5, ZONE6, ZONE7, ZONE8};
 
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
 
@@ -73,23 +65,10 @@ const struct zone my_zones[8] = {
                             {9,ZONE9}
 };
 
-//#define LED1 25
-//#define LED2 26
 
-/* struct led {
-    bool state;
-    uint8_t pinNum;
-}; 
-
-struct led led1;
-struct led led2;
-*/
 static void led_init(void)
 {
-   /*  led1.state = 0;
-    led1.pinNum = 25;
-    led2.state = 0;
-    led2.pinNum = 26; */
+
 
     for (int i = 0; i < 8; i++)
     {
@@ -99,22 +78,6 @@ static void led_init(void)
 
 } 
 
-/* 
-static void flipLED(struct led *led2flip)
-{
-    if (led2flip->state == 0)
-    {
-        gpio_set_level(led2flip->pinNum, 1);
-        led2flip->state = 1;
-        ESP_LOGI("Flip", "Turned %i on", led2flip->pinNum);
-    }
-    else
-    {
-        gpio_set_level(led2flip->pinNum, 0);
-        led2flip->state = 0;
-        ESP_LOGI("Flip", "Turned %i off", led2flip->pinNum);
-    }
-} */
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -182,17 +145,7 @@ void wifi_init_sta(void)
         strcpy((char*)wifi_config.sta.ssid, HOME_SSID);
         strcpy((char*)wifi_config.sta.password, SSID_PW);
 
- /*    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = *(char)EXAMPLE_SSID,
-            .password = *SSID_PW,
-             Setting a password implies station will connect to all security modes including WEP/WPA.
-             * However these modes are deprecated and not advisable to be used. Incase your Access point
-             * doesn't support WPA2, these mode can be enabled by commenting below line 
-	     .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
-        },
-    };
-    */
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
@@ -251,58 +204,49 @@ void mqtt_zone_handler(void *event_data)
      if (zone_on && strcmp(operation->valuestring, "true") == 0)
      {
         ESP_LOGE(TAG, "A zone is already on.");
-        
-        //TODO 
+
         //Fire off an MQTT message back to homebridge to update the status of the switch
         //This should make it look to the user like a switch they flipped just flipped right back
         char buffer[100];
         int buf_len = snprintf(buffer,100,"{\"name\":\"sprinkler\",\"service_name\":\"Zone%i\",\"characteristic\":\"On\",\"value\":false}",current_zone);
         int off_msg = esp_mqtt_client_publish(client, "homebridge/to/set", buffer, buf_len, 0, 0);
-        ESP_LOGI(TAG, "Message status: %i", off_msg);
 
         return;
      }
 
     // Make sure the topic is right and it's actually the sprinkler accessory
-    ESP_LOGI(TAG, "Comparison: %i", strcmp(topic_cpy, SPRINKLER_TOPIC));
 
      if (strcmp(topic_cpy, SPRINKLER_TOPIC) + strcmp(ACC_NAME, "sprinkler")== 0)
-     {
-         ESP_LOGI(TAG, "Topic matched");
-         
-
-       // ESP_LOGI(TAG, "operation: %s - value: %s", operation->valuestring, characteristic->valuestring);
-       // bool char_result = cJSON_IsString(characteristic);
-       // bool op_result = cJSON_IsString(operation);
-
-        //ESP_LOGI(TAG, "Char: %i and op: %i", char_result, op_result);
-        
-
-         if (cJSON_IsString(operation) && (operation->valuestring !=NULL) )
-         {
-             ESP_LOGI(TAG, "Inside 1");
-             if(strcmp(operation->valuestring, "true") == 0 && strcmp(characteristic->valuestring, "On") == 0)
-             {
+    {
+        if (cJSON_IsString(operation) && (operation->valuestring !=NULL) )
+        {
+            if(strcmp(operation->valuestring, "true") == 0 && strcmp(characteristic->valuestring, "On") == 0)
+            {
+                /* TODO */
+                /* We should really have some sort of timeout safety catch in here
+                   Right now I'm relying on Homebridge/HomeKit and I just don't 
+                   trust them enough
+                */
                 gpio_set_level(zone_pin, 0);
                 ESP_LOGI(TAG, "Turned on zone %i", current_zone);
                 zone_on = true;
-             }
-             else
-             {
+            }
+            else
+            {
                 ESP_LOGI(TAG, "Turned off zone %i", current_zone);
                 gpio_set_level(zone_pin, 1);
                 zone_on = false;
-             }
-             
-         }
+            }
+            
+        }
         //we dont' want to be flipping zones on/off too fast
          vTaskDelay(100);
-     }
-     else
-     {
-         ESP_LOGE(TAG, "Topic/accessory mismatch!");
-     }
-     cJSON_Delete(root);
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Topic/accessory mismatch!");
+    }
+    cJSON_Delete(root);
 
 }
 
@@ -310,7 +254,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 {
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
-    int msg_id;
+    //int msg_id;
     switch ((esp_mqtt_event_id_t)event_id)
     {
         case MQTT_EVENT_CONNECTED:
@@ -347,9 +291,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             break;
         case MQTT_EVENT_DATA:
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-            printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-            printf("Raw TOPIC=%s", event->topic);
-            printf("DATA=%.*s\r\n", event->data_len, event->data);
+            //printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+            //printf("Raw TOPIC=%s", event->topic);
+            //printf("DATA=%.*s\r\n", event->data_len, event->data);
             mqtt_zone_handler(event_data);
             break;
         case MQTT_EVENT_ERROR:
@@ -371,6 +315,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void zone_init(esp_mqtt_client_handle_t zone_client)
 {
     //turn off all switches in Homebridge upon reboot
+    //This is pretty specific to my Homebridge config - should abstract this out
     char buffer[100];
     for (int i = 0; i < 8; i++)
     {
@@ -387,6 +332,8 @@ static void zone_init(esp_mqtt_client_handle_t zone_client)
 
 static void mqtt_start(void)
 {
+    /* TODO */
+    // Abstract the URI out of the code
     esp_mqtt_client_config_t mqtt_config = {
         .uri = "mqtt://192.168.86.43:1883",
     };
@@ -407,7 +354,7 @@ static void mqtt_start(void)
 
 void app_main(void)
 {
-    //Initialize NVS - hd to do this or it just boot looped
+    //Initialize NVS - had to do this or it just boot looped
      esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
@@ -420,23 +367,4 @@ void app_main(void)
     led_init();
     wifi_init_sta();
     mqtt_start();
-    /* init();
-    gpio_set_level(led1.pinNum, 1);
-    led1.state = 1;
-
-    while(true)
-    {
-    //  flipLED(LED1);
-    // Set LED1 on and LED2 off
-
-        
-       // flipLED(LED1);
-      //  flipLED(LED2);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        //Flip them
-        flipLED(&led1);
-        flipLED(&led2);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-    } */
 }
