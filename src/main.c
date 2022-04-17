@@ -1,4 +1,16 @@
 
+/****************************
+ * Author: Matt Riley
+ * Created:  4/15/2022
+ * 
+ * Licensed under CC0-1.0 license
+ * 
+ * Attribution:
+ * Some content here is heavily borrowed/copied from the publicly available (and CC0 licensed) ESP32
+ * examples (specifically Wifi and MQTT). I also used examples from the cJSON project's Github.
+ * 
+*******************************/
+
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
