@@ -347,7 +347,7 @@ static void mqtt_start(void)
     /* TODO */
     // Abstract the URI out of the code
     esp_mqtt_client_config_t mqtt_config = {
-        .uri = "mqtt://192.168.86.43:1883",
+        .broker.address.uri = MQTT_BROKER
     };
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_config);
@@ -375,6 +375,9 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    esp_log_level_set("esp-tls", ESP_LOG_VERBOSE);
+    esp_log_level_set("mqtt_client", ESP_LOG_VERBOSE);
+    esp_log_level_set("transport_base", ESP_LOG_VERBOSE);
 
     led_init();
     wifi_init_sta();
