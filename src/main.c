@@ -24,6 +24,8 @@
 #include "nvs_flash.h"
 #include "creds.h"
 
+#include <mcp23017.h>
+
 #include "cJSON.h"
 //#include "cJSON_Utils.h"
 
